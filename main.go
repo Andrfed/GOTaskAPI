@@ -17,6 +17,8 @@ import (
 	_ "github.com/lib/pq"
 
 	"os"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type Task struct {
@@ -60,6 +62,13 @@ func databaseConnection() *sql.DB {
 // методы: db.Exec(), db.QueryRow(), db.Query(), результат.Scan()
 // db.Database.Exec("CALL mydatabase.mystoredprocedure($1, $2)", param1, param2)
 
+func prometheusHandler() gin.HandlerFunc {
+	h := promhttp.Handler()
+	return func(c *gin.Context) {
+		h.ServeHTTP(c.Writer, c.Request)
+	}
+}
+
 func main() {
 	// подключение к базе данных
 	db := databaseConnection()
@@ -83,6 +92,8 @@ func main() {
 	r.GET("/", func(c *gin.Context) {
 		c.String(http.StatusOK, "Список задач")
 	})
+
+	r.GET("/metrics", prometheusHandler())
 
 	taskRouter := r.Group("/tasks")
 	{
